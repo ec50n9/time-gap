@@ -274,22 +274,20 @@ export default function App() {
         </div>
 
         {/* Line 2: 目标时间 (Picker) */}
-        <div className="flex items-center -ml-2 select-none">
+        <div className="flex items-baseline -ml-2 select-none">
           <div className="relative">
             <div
-              className="relative cursor-pointer group px-2 sm:px-4 py-2 rounded-2xl hover:bg-black/5 active:bg-black/10 transition-colors active:scale-[0.98] duration-200"
+              className="relative cursor-pointer group px-2 py-2 rounded-2xl hover:bg-black/5 active:bg-black/10 transition-colors active:scale-[0.98] duration-200"
               onClick={() => setIsDayMenuOpen(true)}
             >
-              <div className="flex items-baseline gap-1 md:gap-2 pointer-events-none">
-                <span className="text-[24px] sm:text-[28px] md:text-[42px] font-medium text-[#777] tracking-wider relative -top-1 md:-top-2 whitespace-nowrap">
+              <div className="flex items-center gap-1.5 md:gap-2 pointer-events-none">
+                <span className="relative inline-block text-[24px] sm:text-[28px] md:text-[42px] font-medium text-[#777] tracking-wider whitespace-nowrap leading-none">
                   {targetDateText}
+                  {dayMode !== 'auto' && (
+                    <span className="absolute -top-0.5 -right-2 w-1.5 h-1.5 rounded-full bg-[#111]" title="已强制" />
+                  )}
                 </span>
-                {dayMode === 'auto' && (
-                  <span className="text-[12px] md:text-[14px] text-[#aaa] font-medium relative -top-3 md:-top-5 tracking-widest bg-black/5 rounded px-1.5 py-0.5">
-                    自动
-                  </span>
-                )}
-                {!isDayMenuOpen && <span className="text-[14px] text-[#ccc] relative -top-2 ml-1 hidden sm:inline-block">▾</span>}
+                {!isDayMenuOpen && <span className="text-[14px] text-[#ccc] leading-none hidden sm:inline-block">▾</span>}
               </div>
             </div>
 
@@ -302,7 +300,7 @@ export default function App() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 5, scale: 0.95 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute top-full left-2 sm:left-4 mt-2 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-2 border border-black/[0.04] min-w-[200px] origin-top-left flex flex-col gap-1 z-50"
+                    className="absolute top-full left-2 mt-2 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-2 border border-black/[0.04] min-w-[200px] origin-top-left flex flex-col gap-1 z-50"
                   >
                     {[
                       { value: 'auto', label: `自动判断 (${autoResultText})` },
@@ -333,7 +331,7 @@ export default function App() {
           </div>
 
           <div
-            className="relative cursor-pointer group px-2 sm:px-4 py-2 rounded-2xl hover:bg-black/5 active:bg-black/10 transition-colors active:scale-[0.98] duration-200"
+            className="relative cursor-pointer group px-2 py-2 rounded-2xl hover:bg-black/5 active:bg-black/10 transition-colors active:scale-[0.98] duration-200"
             onClick={() => {
               setTempTime(targetTime);
               setTempPresetId(targetPresetId);
@@ -341,11 +339,11 @@ export default function App() {
             }}
           >
             <div className="flex items-baseline pointer-events-none">
-              <span className="text-[48px] sm:text-[56px] md:text-[88px] font-bold tracking-tight leading-none text-[#1a1a1a]">
+              <span className="text-[48px] sm:text-[56px] md:text-[88px] font-bold tracking-tight leading-none text-[#1a1a1a] whitespace-nowrap">
                 {targetLabel ?? `${pad(targetTime.hour)}:${pad(targetTime.minute)}`}
               </span>
               {targetLabel && (
-                <span className="ml-2 md:ml-3 text-[14px] md:text-[18px] font-medium text-[#bbb] tracking-wide self-end mb-2 md:mb-4 whitespace-nowrap">
+                <span className="ml-2 md:ml-3 text-[14px] md:text-[18px] font-medium text-[#bbb] tracking-wide whitespace-nowrap">
                   {pad(targetTime.hour)}:{pad(targetTime.minute)}
                 </span>
               )}
@@ -683,7 +681,7 @@ export default function App() {
                   value={editingPreset.label}
                   onChange={(e) => setEditingPreset({ ...editingPreset, label: e.target.value })}
                   placeholder="名称（如：下班）"
-                  maxLength={10}
+                  maxLength={5}
                   autoFocus
                   className="w-full px-4 py-3 bg-black/5 rounded-2xl text-[16px] font-medium outline-none focus:bg-black/[0.08] transition-colors placeholder:text-[#bbb]"
                 />
