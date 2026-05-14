@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "bunx vite --port=3000 --host=0.0.0.0",
+    "build": "bunx vite build",
+    "preview": "bunx vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
