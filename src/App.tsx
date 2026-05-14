@@ -9,6 +9,16 @@ import { AnimatePresence, motion } from 'motion/react';
 type Step = 0 | 15 | 30 | 60;
 type Option = 'shorter' | 'longer';
 type DayMode = 'auto' | 0 | 1 | 2;
+type Preset = { id: string; label: string; hour: number; minute: number };
+
+const STORAGE_KEY = 'time-calc-v1';
+
+const DEFAULT_PRESETS: Preset[] = [
+  { id: 'work-start', label: '上班', hour: 9, minute: 0 },
+  { id: 'lunch', label: '午休', hour: 12, minute: 0 },
+  { id: 'work-end', label: '下班', hour: 18, minute: 0 },
+  { id: 'sleep', label: '睡觉', hour: 23, minute: 0 },
+];
 
 const pad = (num: number) => num.toString().padStart(2, '0');
 
@@ -23,11 +33,14 @@ const ScrollPicker = ({ options, value, onChange, pad: shouldPad }: { options: n
     if (containerRef.current) {
       const index = options.indexOf(value);
       if (index !== -1) {
-        programmedScrollRef.current = true;
-        containerRef.current.scrollTop = index * 44;
+        const target = index * 44;
+        if (Math.abs(containerRef.current.scrollTop - target) > 1) {
+          programmedScrollRef.current = true;
+          containerRef.current.scrollTop = target;
+        }
       }
     }
-  }, []);
+  }, [value]);
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     if (programmedScrollRef.current) {
@@ -71,7 +84,7 @@ const ScrollPicker = ({ options, value, onChange, pad: shouldPad }: { options: n
 export default function App() {
   const [targetTime, setTargetTime] = useState<{ hour: number; minute: number }>(() => {
     try {
-      const saved = localStorage.getItem('time-calc-v1');
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.targetHour !== undefined) {
@@ -84,7 +97,7 @@ export default function App() {
 
   const [step, setStep] = useState<Step>(() => {
     try {
-      const saved = localStorage.getItem('time-calc-v1');
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.step !== undefined) return parsed.step as Step;
@@ -95,13 +108,35 @@ export default function App() {
 
   const [dayMode, setDayMode] = useState<DayMode>(() => {
     try {
-      const saved = localStorage.getItem('time-calc-v1');
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.dayMode !== undefined) return parsed.dayMode as DayMode;
       }
     } catch (e) { }
     return 'auto';
+  });
+
+  const [presets, setPresets] = useState<Preset[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.presets)) return parsed.presets;
+      }
+    } catch (e) { }
+    return DEFAULT_PRESETS;
+  });
+
+  const [targetPresetId, setTargetPresetId] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.targetPresetId !== undefined) return parsed.targetPresetId;
+      }
+    } catch (e) { }
+    return null;
   });
 
   const [selectedOption, setSelectedOption] = useState<Option>('shorter');
@@ -111,17 +146,26 @@ export default function App() {
   const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [tempTime, setTempTime] = useState<{ hour: number; minute: number }>({ hour: 0, minute: 0 });
+  const [tempPresetId, setTempPresetId] = useState<string | null>(null);
+  const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
   const longPressTimer = useRef<number | null>(null);
+  const presetLongPressTimer = useRef<number | null>(null);
+  const presetLongPressFired = useRef(false);
+
+  const targetLabel = presets.find(p => p.id === targetPresetId)?.label ?? null;
+  const isNewPreset = editingPreset !== null && !presets.some(p => p.id === editingPreset.id);
 
   // Save to locale storage on change
   useEffect(() => {
-    localStorage.setItem('time-calc-v1', JSON.stringify({
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
       targetHour: targetTime.hour,
       targetMinute: targetTime.minute,
       step,
-      dayMode
+      dayMode,
+      presets,
+      targetPresetId,
     }));
-  }, [targetTime, step, dayMode]);
+  }, [targetTime, step, dayMode, presets, targetPresetId]);
 
   // Update clock every second
   useEffect(() => {
@@ -292,13 +336,19 @@ export default function App() {
             className="relative cursor-pointer group px-2 sm:px-4 py-2 rounded-2xl hover:bg-black/5 active:bg-black/10 transition-colors active:scale-[0.98] duration-200"
             onClick={() => {
               setTempTime(targetTime);
+              setTempPresetId(targetPresetId);
               setIsTimePickerOpen(true);
             }}
           >
             <div className="flex items-baseline pointer-events-none">
               <span className="text-[48px] sm:text-[56px] md:text-[88px] font-bold tracking-tight leading-none text-[#1a1a1a]">
-                {pad(targetTime.hour)}:{pad(targetTime.minute)}
+                {targetLabel ?? `${pad(targetTime.hour)}:${pad(targetTime.minute)}`}
               </span>
+              {targetLabel && (
+                <span className="ml-2 md:ml-3 text-[14px] md:text-[18px] font-medium text-[#bbb] tracking-wide self-end mb-2 md:mb-4 whitespace-nowrap">
+                  {pad(targetTime.hour)}:{pad(targetTime.minute)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -479,12 +529,71 @@ export default function App() {
                   className="px-2 py-2 text-[#000] font-bold text-[16px] transition-colors"
                   onClick={() => {
                     setTargetTime(tempTime);
+                    setTargetPresetId(tempPresetId);
                     setSelectedOption('shorter');
                     setIsTimePickerOpen(false);
                     if (navigator.vibrate) navigator.vibrate(30);
                   }}
                 >
                   确定
+                </button>
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto px-5 py-3 border-b border-black/5 hide-scrollbar">
+                {presets.map(preset => (
+                  <button
+                    key={preset.id}
+                    onPointerDown={() => {
+                      presetLongPressFired.current = false;
+                      presetLongPressTimer.current = window.setTimeout(() => {
+                        presetLongPressFired.current = true;
+                        setEditingPreset({ ...preset });
+                        if (navigator.vibrate) navigator.vibrate(50);
+                      }, 500);
+                    }}
+                    onPointerUp={() => {
+                      if (presetLongPressTimer.current) {
+                        clearTimeout(presetLongPressTimer.current);
+                        presetLongPressTimer.current = null;
+                      }
+                      if (!presetLongPressFired.current) {
+                        setTargetTime({ hour: preset.hour, minute: preset.minute });
+                        setTargetPresetId(preset.id);
+                        setSelectedOption('shorter');
+                        setIsTimePickerOpen(false);
+                        if (navigator.vibrate) navigator.vibrate(30);
+                      }
+                    }}
+                    onPointerCancel={() => {
+                      if (presetLongPressTimer.current) {
+                        clearTimeout(presetLongPressTimer.current);
+                        presetLongPressTimer.current = null;
+                      }
+                    }}
+                    onContextMenu={e => e.preventDefault()}
+                    className={`shrink-0 px-4 py-2 rounded-full text-[14px] font-medium transition-colors whitespace-nowrap ${
+                      tempPresetId === preset.id
+                        ? 'bg-[#111] text-white'
+                        : 'bg-black/5 text-[#555] hover:bg-black/10 active:bg-black/[0.12]'
+                    }`}
+                  >
+                    {preset.label}
+                    <span className={`ml-1.5 font-mono tabular-nums ${tempPresetId === preset.id ? 'opacity-70' : 'opacity-50'}`}>
+                      {pad(preset.hour)}:{pad(preset.minute)}
+                    </span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => setEditingPreset({
+                    id: `p-${Date.now()}`,
+                    label: '',
+                    hour: tempTime.hour,
+                    minute: tempTime.minute,
+                  })}
+                  className="shrink-0 px-4 py-2 rounded-full text-[16px] font-medium bg-black/5 text-[#888] hover:bg-black/10 active:bg-black/[0.12] transition-colors leading-none"
+                  aria-label="新增预设"
+                >
+                  +
                 </button>
               </div>
 
@@ -496,17 +605,123 @@ export default function App() {
                   <ScrollPicker
                     options={hoursList}
                     value={tempTime.hour}
-                    onChange={(v) => setTempTime(prev => ({ ...prev, hour: v }))}
+                    onChange={(v) => { setTempTime(prev => ({ ...prev, hour: v })); setTempPresetId(null); }}
                     pad
                   />
                   <div className="flex items-center justify-center font-bold text-3xl pb-1.5 opacity-50 relative -top-[1px] -mx-4 pointer-events-none">:</div>
                   <ScrollPicker
                     options={minutesList}
                     value={tempTime.minute}
-                    onChange={(v) => setTempTime(prev => ({ ...prev, minute: v }))}
+                    onChange={(v) => { setTempTime(prev => ({ ...prev, minute: v })); setTempPresetId(null); }}
                     pad
                   />
                 </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Preset Edit Modal */}
+      <AnimatePresence>
+        {editingPreset && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={() => setEditingPreset(null)}
+              className="fixed inset-0 bg-black/30 z-[80]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl z-[90] w-[92vw] max-w-md overflow-hidden select-none"
+            >
+              <div className="flex items-center justify-between p-4 px-6 border-b border-black/5">
+                <button
+                  className="px-2 py-2 text-[#999] hover:text-[#555] font-medium text-[16px] transition-colors"
+                  onClick={() => setEditingPreset(null)}
+                >
+                  取消
+                </button>
+                <div className="text-[17px] font-medium text-[#111]">
+                  {isNewPreset ? '添加预设' : '编辑预设'}
+                </div>
+                <button
+                  className="px-2 py-2 text-[#000] font-bold text-[16px] transition-colors disabled:opacity-30"
+                  disabled={!editingPreset.label.trim()}
+                  onClick={() => {
+                    const next = { ...editingPreset, label: editingPreset.label.trim() };
+                    if (isNewPreset) {
+                      setPresets([...presets, next]);
+                      setTempTime({ hour: next.hour, minute: next.minute });
+                      setTempPresetId(next.id);
+                    } else {
+                      setPresets(presets.map(p => p.id === next.id ? next : p));
+                      if (targetPresetId === next.id) {
+                        setTargetTime({ hour: next.hour, minute: next.minute });
+                      }
+                      if (tempPresetId === next.id) {
+                        setTempTime({ hour: next.hour, minute: next.minute });
+                      }
+                    }
+                    setEditingPreset(null);
+                    if (navigator.vibrate) navigator.vibrate(30);
+                  }}
+                >
+                  保存
+                </button>
+              </div>
+
+              <div className="p-5">
+                <input
+                  type="text"
+                  value={editingPreset.label}
+                  onChange={(e) => setEditingPreset({ ...editingPreset, label: e.target.value })}
+                  placeholder="名称（如：下班）"
+                  maxLength={10}
+                  autoFocus
+                  className="w-full px-4 py-3 bg-black/5 rounded-2xl text-[16px] font-medium outline-none focus:bg-black/[0.08] transition-colors placeholder:text-[#bbb]"
+                />
+
+                <div className="flex relative h-[240px] mt-4 items-center justify-center bg-[#fafafa] rounded-2xl overflow-hidden">
+                  <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 h-[44px] bg-black/5 rounded-2xl pointer-events-none" />
+                  <div className="flex justify-center gap-[40px] relative z-10">
+                    <ScrollPicker
+                      options={hoursList}
+                      value={editingPreset.hour}
+                      onChange={(v) => setEditingPreset({ ...editingPreset, hour: v })}
+                      pad
+                    />
+                    <div className="flex items-center justify-center font-bold text-3xl pb-1.5 opacity-50 relative -top-[1px] -mx-4 pointer-events-none">:</div>
+                    <ScrollPicker
+                      options={minutesList}
+                      value={editingPreset.minute}
+                      onChange={(v) => setEditingPreset({ ...editingPreset, minute: v })}
+                      pad
+                    />
+                  </div>
+                </div>
+
+                {!isNewPreset && (
+                  <button
+                    onClick={() => {
+                      const id = editingPreset.id;
+                      setPresets(presets.filter(p => p.id !== id));
+                      if (targetPresetId === id) setTargetPresetId(null);
+                      if (tempPresetId === id) setTempPresetId(null);
+                      setEditingPreset(null);
+                      if (navigator.vibrate) navigator.vibrate(30);
+                    }}
+                    className="mt-4 w-full py-3 rounded-2xl bg-red-50 text-red-600 font-medium text-[15px] hover:bg-red-100 active:bg-red-200 transition-colors"
+                  >
+                    删除此预设
+                  </button>
+                )}
               </div>
             </motion.div>
           </>
