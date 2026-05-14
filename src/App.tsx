@@ -42,18 +42,17 @@ const ScrollPicker = ({ options, value, onChange, pad: shouldPad }: { options: n
   };
 
   return (
-    <div 
+    <div
       className="h-[240px] w-20 overflow-y-auto snap-y snap-mandatory py-[98px] hide-scrollbar"
       ref={containerRef}
       onScroll={handleScroll}
       style={{ scrollBehavior: 'auto' }}
     >
       {options.map((opt) => (
-        <div 
+        <div
           key={opt}
-          className={`h-[44px] flex items-center justify-center snap-center text-[24px] cursor-pointer transition-colors ${
-            value === opt ? 'text-[#111] font-bold' : 'text-[#bbb] font-medium'
-          }`}
+          className={`h-[44px] flex items-center justify-center snap-center text-[24px] cursor-pointer transition-colors ${value === opt ? 'text-[#111] font-bold' : 'text-[#bbb] font-medium'
+            }`}
           onClick={() => {
             if (containerRef.current) {
               programmedScrollRef.current = true;
@@ -79,7 +78,7 @@ export default function App() {
           return { hour: parsed.targetHour, minute: parsed.targetMinute };
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return { hour: 8, minute: 30 };
   });
 
@@ -90,7 +89,7 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (parsed.step !== undefined) return parsed.step as Step;
       }
-    } catch (e) {}
+    } catch (e) { }
     return 0;
   });
 
@@ -101,7 +100,7 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (parsed.dayMode !== undefined) return parsed.dayMode as DayMode;
       }
-    } catch (e) {}
+    } catch (e) { }
     return 'auto';
   });
 
@@ -116,9 +115,9 @@ export default function App() {
 
   // Save to locale storage on change
   useEffect(() => {
-    localStorage.setItem('time-calc-v1', JSON.stringify({ 
-      targetHour: targetTime.hour, 
-      targetMinute: targetTime.minute, 
+    localStorage.setItem('time-calc-v1', JSON.stringify({
+      targetHour: targetTime.hour,
+      targetMinute: targetTime.minute,
       step,
       dayMode
     }));
@@ -136,7 +135,7 @@ export default function App() {
 
   let isAutoTomorrow = false;
   let autoResultText = '';
-  
+
   // Calculate auto result
   const autoTarget = new Date(target);
   if (autoTarget.getTime() <= now.getTime()) {
@@ -155,8 +154,8 @@ export default function App() {
     target.setFullYear(d.getFullYear(), d.getMonth(), d.getDate());
   }
 
-  const targetDateText = dayMode === 'auto' 
-    ? autoResultText 
+  const targetDateText = dayMode === 'auto'
+    ? autoResultText
     : dayMode === 0 ? '今天' : dayMode === 1 ? '明天' : '后天';
 
   const diffMs = Math.max(0, target.getTime() - now.getTime());
@@ -192,7 +191,7 @@ export default function App() {
   };
 
   const displayStr = step === 0 ? formatHMS(diffMs) : formatHM(activeMins);
-  
+
   const showToast = () => {
     setToastVisible(true);
     setTimeout(() => setToastVisible(false), 2000);
@@ -200,7 +199,7 @@ export default function App() {
 
   const handlePointerDown = () => {
     longPressTimer.current = window.setTimeout(() => {
-      navigator.clipboard.writeText(displayStr).catch(() => {});
+      navigator.clipboard.writeText(displayStr).catch(() => { });
       if (navigator.vibrate) navigator.vibrate(50);
       showToast();
     }, 1000);
@@ -212,7 +211,7 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 bg-[#fafafa] flex flex-col font-sans touch-manipulation overflow-hidden">
-      
+
       {/* Top Right: Current Time */}
       <div className="absolute top-6 right-6 md:top-8 md:right-8 flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/5 z-10 text-[14px] md:text-[15px] font-medium text-[#555]">
         <div className="relative flex items-center justify-center w-2 h-2">
@@ -224,16 +223,16 @@ export default function App() {
 
       {/* Main Content Flow */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-8 md:px-[10%] max-w-5xl mx-auto w-full pb-[10vh]">
-        
+
         {/* Line 1: 现在距离 */}
         <div className="text-[20px] md:text-[32px] text-[#999] font-medium tracking-wide mb-1 md:mb-3 ml-2 md:ml-4">
           现在距离
         </div>
-        
+
         {/* Line 2: 目标时间 (Picker) */}
         <div className="flex items-center -ml-2 select-none">
           <div className="relative">
-            <div 
+            <div
               className="relative cursor-pointer group px-2 sm:px-4 py-2 rounded-2xl hover:bg-black/5 active:bg-black/10 transition-colors active:scale-[0.98] duration-200"
               onClick={() => setIsDayMenuOpen(true)}
             >
@@ -263,9 +262,9 @@ export default function App() {
                   >
                     {[
                       { value: 'auto', label: `自动判断 (${autoResultText})` },
-                      { value: 0, label: '强制在今天' },
-                      { value: 1, label: '强制在明天' },
-                      { value: 2, label: '强制在后天' },
+                      { value: 0, label: '今天' },
+                      { value: 1, label: '明天' },
+                      { value: 2, label: '后天' },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -289,7 +288,7 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          <div 
+          <div
             className="relative cursor-pointer group px-2 sm:px-4 py-2 rounded-2xl hover:bg-black/5 active:bg-black/10 transition-colors active:scale-[0.98] duration-200"
             onClick={() => {
               setTempTime(targetTime);
@@ -316,11 +315,10 @@ export default function App() {
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             onContextMenu={e => e.preventDefault()}
-            className={`inline-block font-bold text-black font-mono tracking-tighter leading-none cursor-pointer active:scale-[0.98] active:opacity-80 transition-all rounded-3xl px-2 sm:px-4 py-2 hover:bg-black/5 whitespace-nowrap ${
-              step === 0 
-                ? 'text-[54px] sm:text-[72px] md:text-[120px]' 
+            className={`inline-block font-bold text-black font-mono tracking-tighter leading-none cursor-pointer active:scale-[0.98] active:opacity-80 transition-all rounded-3xl px-2 sm:px-4 py-2 hover:bg-black/5 whitespace-nowrap ${step === 0
+                ? 'text-[54px] sm:text-[72px] md:text-[120px]'
                 : 'text-[72px] sm:text-[96px] md:text-[140px]'
-            }`}
+              }`}
           >
             {displayStr}
           </div>
@@ -342,7 +340,7 @@ export default function App() {
                 </div>
               ) : isExact ? (
                 <div className="text-[16px] md:text-[22px] text-[#777] font-medium leading-relaxed max-w-xl">
-                  十分完美，刚好满足 {step} 分钟的取整要求。<br className="hidden md:block"/>
+                  十分完美，刚好满足 {step} 分钟的取整要求。<br className="hidden md:block" />
                   这表示倒计时会在 <span className="text-[#111] font-bold border-b-2 border-black/20 pb-0.5 whitespace-nowrap">{getEndDateTimeStr(activeMins)}</span> 准点结束。
                 </div>
               ) : (
@@ -351,14 +349,14 @@ export default function App() {
                     为了凑整 {step} 分钟，当前选择了<span className="text-[#111] font-bold mx-1 whitespace-nowrap">{selectedOption === 'shorter' ? '稍微提前' : '稍微推迟'}</span>。<br />
                     倒计时将在 <span className="text-[#111] font-bold border-b-[3px] border-black/10 pb-0.5 whitespace-nowrap">{getEndDateTimeStr(activeMins)}</span> 刚好完成。
                   </div>
-                  
-                  <button 
+
+                  <button
                     onClick={() => setSelectedOption(selectedOption === 'shorter' ? 'longer' : 'shorter')}
                     className="flex items-center gap-2 px-5 py-3 md:px-6 md:py-3.5 rounded-[16px] bg-black/[0.03] hover:bg-black/[0.06] active:bg-black/[0.08] active:scale-[0.98] transition-all outline-none cursor-pointer group mt-1"
                   >
                     <span className="text-[14px] md:text-[15px] text-[#666] font-medium group-hover:text-[#333] transition-colors text-left leading-snug">
-                       {inactiveMins === 0 
-                        ? '或者不想等了，立刻开始 ➔' 
+                      {inactiveMins === 0
+                        ? '或者不想等了，立刻开始 ➔'
                         : `或者想${selectedOption === 'shorter' ? '晚一点' : '早一点'}，改成 ${getEndDateTimeStr(inactiveMins)} 结束 ➔`}
                     </span>
                   </button>
@@ -470,14 +468,14 @@ export default function App() {
               style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
               <div className="flex items-center justify-between p-4 px-6 border-b border-black/5">
-                <button 
+                <button
                   className="px-2 py-2 text-[#999] hover:text-[#555] font-medium text-[16px] transition-colors"
                   onClick={() => setIsTimePickerOpen(false)}
                 >
                   取消
                 </button>
                 <div className="text-[17px] font-medium text-[#111]">选择时间</div>
-                <button 
+                <button
                   className="px-2 py-2 text-[#000] font-bold text-[16px] transition-colors"
                   onClick={() => {
                     setTargetTime(tempTime);
@@ -493,18 +491,18 @@ export default function App() {
               <div className="flex relative h-[250px] items-center justify-center bg-[#fafafa]">
                 {/* Highlight band */}
                 <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 h-[44px] bg-black/5 rounded-2xl pointer-events-none" />
-                
+
                 <div className="flex w-full max-w-sm justify-center gap-[40px] relative z-10 px-8">
-                  <ScrollPicker 
-                    options={hoursList} 
-                    value={tempTime.hour} 
+                  <ScrollPicker
+                    options={hoursList}
+                    value={tempTime.hour}
                     onChange={(v) => setTempTime(prev => ({ ...prev, hour: v }))}
                     pad
                   />
                   <div className="flex items-center justify-center font-bold text-3xl pb-1.5 opacity-50 relative -top-[1px] -mx-4 pointer-events-none">:</div>
-                  <ScrollPicker 
-                    options={minutesList} 
-                    value={tempTime.minute} 
+                  <ScrollPicker
+                    options={minutesList}
+                    value={tempTime.minute}
                     onChange={(v) => setTempTime(prev => ({ ...prev, minute: v }))}
                     pad
                   />
@@ -514,7 +512,7 @@ export default function App() {
           </>
         )}
       </AnimatePresence>
-      
+
     </div>
   );
 }
