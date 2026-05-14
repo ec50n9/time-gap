@@ -1,6 +1,0 @@
-{
-  "name": "极简时间计算器",
-  "description": "极简时间差与下班倒计时工具。零按钮，零标签，支持步进取整计算。",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
-}
